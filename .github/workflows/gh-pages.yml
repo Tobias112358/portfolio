@@ -8,6 +8,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v2
       - name: Setup Rust
@@ -29,19 +31,19 @@ jobs:
       - name: Prepare for deployment
         run: |
           cd pkg
-          cat .gitignore
           git init
           git config user.name github-actions
           git config user.email github-actions@github.com
-          git add -f .
-          echo "gitignore contents:"
-          cat .gitignore
+          echo "After git init:"
           git status
-          echo "Git status:"
+          git add -f .
+          echo "After git add:"
           git status
           echo "Git diff:"
           git diff --cached --name-only
           git commit -m "Deploy to GitHub Pages"
+          echo "After git commit:"
+          git status
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
