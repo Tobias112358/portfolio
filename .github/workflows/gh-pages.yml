@@ -34,7 +34,7 @@ jobs:
           echo "Contents of current directory:"
           ls -la
       - name: Prepare for deployment
-        run: |s
+        run: |
           cd pkg
           git init
           git add -A
