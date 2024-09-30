@@ -5,6 +5,7 @@ pub fn greet(name: &str) -> String {
     format!("Hello, {}! Welcome to WASM!", name)
 }
 
+#[wasm_bindgen]
 pub fn add(left: u64, right: u64) -> u64 {
     left + right
 }
