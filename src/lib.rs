@@ -1,5 +1,27 @@
 use wasm_bindgen::prelude::*;
 
+mod karplus_strong;
+mod random;
+
+pub use karplus_strong::KarplusStrong;
+
+
+#[wasm_bindgen]
+pub fn generate_karplus_strong() {
+    let sample_rate = 44100.0;
+    let frequency = 440.0; // A4 note
+    let duration = 2.0; // seconds
+
+    let mut synth = karplus_strong::KarplusStrong::new(frequency, sample_rate);
+
+    for _ in 0..(sample_rate * duration) as usize {
+        let sample = synth.tick();
+        // Here you would typically send the sample to your audio output
+        println!("{}", sample);
+    }
+}
+
+
 #[wasm_bindgen]
 pub fn greet(name: &str) -> String {
     format!("Hello, {}! Welcome to WASM!", name)
