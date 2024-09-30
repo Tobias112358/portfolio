@@ -20,8 +20,14 @@ jobs:
         run: |
           wasm-pack build --target web
           cp -r www/* pkg/
+      - name: List contents of www directory
+        run: |
+          echo "Contents of www directory:"
+          ls -la www
       - name: List contents of pkg directory
-        run: ls -la pkg
+        run: |
+          echo "Contents of pkg directory:"
+          ls -la pkg
       - name: Debug info
         run: |
           echo "Current directory: $(pwd)"
@@ -32,3 +38,4 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./pkg
+          force_orphan: true
