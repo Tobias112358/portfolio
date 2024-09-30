@@ -18,4 +18,10 @@ mod tests {
         let result = add(2, 2);
         assert_eq!(result, 4);
     }
+
+    #[test]
+    fn greet_test() {
+        let result = greet("Tobias");
+        assert_eq!(result, "Hello, Tobias! Welcome to WASM!");
+    }
 }
