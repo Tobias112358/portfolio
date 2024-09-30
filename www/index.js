@@ -1,4 +1,4 @@
-import init, { greet } from '../pkg/portfolio.js';
+import init, { greet } from './portfolio.js';   //development path is ../pkg/portfolio.js
 
 async function run() {
     await init();
