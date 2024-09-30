@@ -20,11 +20,22 @@ jobs:
         run: |
           wasm-pack build --target web
           cp -r www/* pkg/
+      - name: Debug - List pkg contents
+        run: |
+          echo "Contents of pkg directory:"
+          ls -la pkg
+      - name: Prepare for deployment
+        run: |
+          cd pkg
+          git init
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add .
+          git status
+          git commit -m "Deploy to GitHub Pages"
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./pkg
           force_orphan: true
-          # This line tells the action to ignore .gitignore
-          disable_nojekyll: true
