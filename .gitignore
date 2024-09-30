@@ -4,7 +4,7 @@
 Cargo.lock
 
 # WASM-specific artifacts
-# /pkg
+/pkg
 
 # Node.js dependencies
 /node_modules
