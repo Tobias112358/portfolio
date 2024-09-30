@@ -1,0 +1,32 @@
+/target
+# Rust build artifacts
+/target
+Cargo.lock
+
+# WASM-specific artifacts
+/pkg
+
+# Node.js dependencies
+/node_modules
+
+# Build output
+/dist
+
+# Editor-specific files
+.vscode/
+.idea/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+
+# Logs
+*.log
+
+# Environment variables
+.env
