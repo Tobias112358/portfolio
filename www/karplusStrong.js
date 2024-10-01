@@ -1,11 +1,27 @@
-import init, { KarplusStrong } from './pkg/portfolio.js';
+import init, { KarplusStrong } from './portfolio.js';
 
 let audioContext;
 
+/**
+ * Initializes the audio context and loads the WebAssembly module.
+ * This function must be called before any audio playback can occur.
+ * 
+ * @async
+ * @function initAudio
+ * @returns {Promise<void>} A promise that resolves when the audio context is initialized and the WebAssembly module is loaded.
+ */
 async function initAudio() {
     await init();
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
 }
+
+/**
+ * Plays a Karplus-Strong synthesized sound at the specified frequency for the given duration.
+ * 
+ * @function playKarplusStrong
+ * @param {number} frequency - The frequency of the note to play, in Hertz.
+ * @param {number} duration - The duration of the note, in seconds.
+ */
 
 function playKarplusStrong(frequency, duration) {
     const sampleRate = audioContext.sampleRate;

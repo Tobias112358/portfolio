@@ -43,4 +43,10 @@ impl KarplusStrong {
         self.index = next_index;
         current_sample
     }
+
+    #[wasm_bindgen]
+    pub fn set_decay(&mut self, decay: f32) {
+        self.decay = decay;
+    }
+
 }
