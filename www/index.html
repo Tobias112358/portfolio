@@ -7,39 +7,80 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <nav>
-        <ul>
-            <li><a href="index.html">Home</a></li>
-            <li><a href="fun.html">Fun</a></li>
-        </ul>
-    </nav>
-    <h1>Tobias Loveridge</h1>
-    <div>
-        <h2>About Me</h2>
-        <p>I am a software engineer, focused profesionally on web development and serverless architecture. I have worked on providing multiple solutions for a variety of clients.</p>
-        <h2>My Skills</h2>
-        <ul>
-            <li>Software Development</li>
-            <li>Web Development</li>
-            <li>Amazon Web Services</li>
-        </ul>
-        <h2>My Work</h2>
-        <p>Here are some of my personal projects:</p>
-        <ul>
-            <li><h3>Simple Synth</h3><p>A simple synthesizer VST made in Rust. It can be downloaded from my github page <a href="https://github.com/Tobias112358/simple-synth/releases/tag/vst3">here</a>.</p></li>
-            <li><h3>Simple Bitcrush</h3><p>A simple bitcrush distortion VST made in Rust. The source code can be found on my github page <a href="https://github.com/Tobias112358/simple_bitcrush">here</a>.</p></li>
-            <li><h3>Game a Week Submission 1: Well</h3><p>During the Pixel Pasture game jam, I created the game "Well". It is a simple platformer made in Unreal Engine 5.<br />The game can be downloaded <a href="https://cosmosman.itch.io/well">here</a>.</p></li>
-            <li><h3>Game a Week Submission 2: Space Cross</h3><p>During the Pixel Pasture game jam, I collaborated on the game "Space Cross". It is a resource management game made in Unity.<br />The game can be played <a href="https://nahte101.itch.io/space-cross">here</a>.</p></li>
-        </ul>
-        <h2>Contact Me</h2>
-        <p>You can contact me at tobias.loveridge@gmail.com.</p>
-        <h2>My GitHub</h2>
-        <p>You can find me on <a href="https://github.com/Tobias112358">GitHub</a>.</p>
-        <h2>My LinkedIn</h2>
-        <p>You can find me on <a href="https://www.linkedin.com/in/toby-loveridge-409b86192/">LinkedIn</a>.</p>
-    </div>
-    
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="fun.html">Fun</a></li>
+            </ul>
+        </nav>
+        <div class="content" id="content-container">
+            <div class="mouse-glow"></div>
+            <div class="section">
+                <h1>Tobias Loveridge</h1>
+            </div>
+        <div class="section">
+                <h2>About Me</h2>
+                <p>I am a software engineer, focused profesionally on web development and serverless architecture. I have worked on providing multiple solutions for a variety of clients.</p>
+            </div>
+            <div class="section">
+                <h2>My Skills</h2>
+                <ul>
+                    <li>Software Development</li>
+                    <li>Web Development</li>
+                    <li>Amazon Web Services</li>
+                </ul>
+            </div>
+            <div class="section">
+                <h2>My Work</h2>
+                <p>Here are some of my personal projects:</p>
+                <ul class="work-list">
+                    <li class="work" id="simple-synth"><h3 class="work-title">Simple Synth</h3><p class="work-description">A simple synthesizer VST made in Rust. It can be downloaded from my github page <a href="https://github.com/Tobias112358/simple-synth/releases/tag/vst3">here</a>.</p></li>
+                    <li class="work" id="simple-bitcrush"><h3 class="work-title">Simple Bitcrush</h3><p class="work-description">A simple bitcrush distortion VST made in Rust. The source code can be found on my github page <a href="https://github.com/Tobias112358/simple_bitcrush">here</a>.</p></li>
+                    <li class="work" id="well"><h3 class="work-title">Game a Week Submission 1: Well</h3><p class="work-description">During the Pixel Pasture game jam, I created the game "Well". It is a simple platformer made in Unreal Engine 5.<br />The game can be downloaded <a href="https://cosmosman.itch.io/well">here</a>.</p></li>
+                    <li class="work" id="space-cross"><h3 class="work-title">Game a Week Submission 2: Space Cross</h3><p class="work-description">During the Pixel Pasture game jam, I collaborated on the game "Space Cross". It is a resource management game made in Unity.<br />The game can be played <a href="https://nahte101.itch.io/space-cross">here</a>.</p></li>
+                </ul>
+            </div>
+            <div class="section">
+                <h2>Contact Me</h2>
+                <ul>
+                    <li><label>Email:</label><a href="mailto:tobias.loveridge@gmail.com">tobias.loveridge@gmail.com</a></li>
+                    <li><label>Phone:</label><a href="tel:+447863340965">+44 7863 340 965</a></li>
+                </ul>
+            </div>
+            <div class="section">
+                <h2>My GitHub</h2>
+                <p>You can find me on <a href="https://github.com/Tobias112358">GitHub</a>.</p>
+            </div>
+            <div class="section">
+                <h2>My LinkedIn</h2>
+                <p>You can find me on <a href="https://www.linkedin.com/in/toby-loveridge-409b86192/">LinkedIn</a>.</p>
+            </div>
+        </div>
     <script type="module" src="index.js"></script>
-
 </body>
+<script>
+    document.addEventListener('mousemove', (e) => {
+        const mouseGlow = document.querySelector('.mouse-glow');
+        mouseGlow.style.setProperty('--mouse-x', e.clientX + 'px');
+        mouseGlow.style.setProperty('--mouse-y', e.clientY + 'px');
+
+        // Change text color based on mouse position
+        const elements = document.querySelectorAll('h3, a'); // Select text elements
+        elements.forEach(element => {
+            const rect = element.getBoundingClientRect();
+            const isHovered = (
+                e.clientX >= rect.left &&
+                e.clientX <= rect.right &&
+                e.clientY >= rect.top &&
+                e.clientY <= rect.bottom
+            );
+
+            if (isHovered) {
+                element.classList.add('text-glow'); // Add glow class
+            } else {
+                element.classList.remove('text-glow'); // Remove glow class
+            }
+        });
+    });
+</script>
 </html>

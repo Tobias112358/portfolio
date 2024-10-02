@@ -13,14 +13,25 @@
             <li><a href="fun.html">Fun</a></li>
         </ul>
     </nav>
-    <h1>Fun Page</h1>
-    <div id="content">
-        
-    <br />
-    <button id="trigger-synth-button">Pluck</button>
+    <div class="content" id="content-container">
+        <div class="mouse-glow"></div>
 
-    <p>...and more to come.</p>
+        <div class="section">
+            <h1>Fun Page</h1>
+            <br />
+            <button id="trigger-synth-button">Pluck</button>
+        </div>
+        <div class="section">
+            <p>...and more to come.</p>
+        </div>
     </div>
     <script type="module" src="index.js"></script>
 </body>
+<script>
+    document.addEventListener('mousemove', (e) => {
+        const mouseGlow = document.querySelector('.mouse-glow');
+        mouseGlow.style.setProperty('--mouse-x', e.clientX + 'px');
+        mouseGlow.style.setProperty('--mouse-y', e.clientY + 'px');
+    });
+</script>
 </html>
