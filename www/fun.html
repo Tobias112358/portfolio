@@ -22,6 +22,12 @@
             <button id="trigger-synth-button">Pluck</button>
         </div>
         <div class="section">
+            <h2>Granular Synth</h2>
+            <br />
+            <input type="file" id="file-input" />
+            <button id="trigger-granular-synth-button">Trigger</button>
+        </div>
+        <div class="section">
             <p>...and more to come.</p>
         </div>
     </div>
@@ -33,5 +39,10 @@
         mouseGlow.style.setProperty('--mouse-x', e.clientX + 'px');
         mouseGlow.style.setProperty('--mouse-y', e.clientY + 'px');
     });
+
+    // Define the console_log function
+    window.console_log = function(s) {
+        console.log(s);
+    };
 </script>
 </html>

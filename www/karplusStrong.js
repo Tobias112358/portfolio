@@ -1,4 +1,4 @@
-import init, { KarplusStrong } from './portfolio.js';
+import { KarplusStrong } from './portfolio.js';
 
 let audioContext;
 
@@ -7,11 +7,10 @@ let audioContext;
  * This function must be called before any audio playback can occur.
  * 
  * @async
- * @function initAudio
+ * @function initKarplusStrong
  * @returns {Promise<void>} A promise that resolves when the audio context is initialized and the WebAssembly module is loaded.
  */
-async function initAudio() {
-    await init();
+async function initKarplusStrong() {
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
 }
 
@@ -40,4 +39,4 @@ function playKarplusStrong(frequency, duration) {
     source.start();
 }
 
-export { initAudio, playKarplusStrong };
+export { initKarplusStrong, playKarplusStrong };

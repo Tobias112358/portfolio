@@ -1,9 +1,11 @@
 use wasm_bindgen::prelude::*;
 
+mod granular;
 mod karplus_strong;
 mod random;
 
 pub use karplus_strong::KarplusStrong;
+pub use granular::GranularSynth;
 
 
 #[wasm_bindgen]
