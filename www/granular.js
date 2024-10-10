@@ -23,7 +23,7 @@ async function initGranular() {
  * @param {number} duration - The duration of the sound, in seconds.
  */
 
-function playGranularSynth(sampleFileBuffer, duration) {
+function playGranularSynth(sampleFileBuffer, duration, grainArray) {
     const sampleRate = audioContext.sampleRate;
     const audioData = new Float32Array(sampleFileBuffer);
     const synth = new GranularSynth(sampleRate);
@@ -31,10 +31,10 @@ function playGranularSynth(sampleFileBuffer, duration) {
     const bufferSize = Math.floor(sampleRate * duration);
     const buffer = audioContext.createBuffer(1, bufferSize, sampleRate);
     const channelData = buffer.getChannelData(0);
-    synth.add_grain(1, 2);
-    synth.add_grain(2, 1);
-    synth.add_grain(3, 0.5);
-    synth.add_grain(4, 0.5);
+
+    for(let i = 0; i < grainArray.length; i = i+2){
+        synth.add_grain(grainArray[i], grainArray[i+1] - grainArray[i]);
+    }
     const generatedSamples = synth.generate();
 
     // Set the channel data to the generated samples

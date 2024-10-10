@@ -22,10 +22,15 @@
             <button id="trigger-synth-button">Pluck</button>
         </div>
         <div class="section">
-            <h2>Granular Synth</h2>
+            <h2>Granular Synth (Kind of..)</h2>
             <br />
             <input type="file" id="file-input" />
             <button id="trigger-granular-synth-button">Trigger</button>
+            <div id="timestamp-display-start">Start Timestamp: 0.00 seconds</div>
+            <div id="timestamp-display-end">End Timestamp: 0.00 seconds</div>
+            <label>Set end timestamp: </label><input type="checkbox" id="timestamp-selector" />
+            <canvas id="waveform-canvas" width="600" height="200"></canvas> <!-- Add this line -->
+
         </div>
         <div class="section">
             <p>...and more to come.</p>
