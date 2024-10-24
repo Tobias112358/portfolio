@@ -1,5 +1,6 @@
 //import { greet } from './portfolio.js';   //development path is ../pkg/portfolio.js
 import { initAudio, playKarplusStrong } from './karplusStrong.js';
+import { startGame } from './game.js';
 
 function setupSectionScrolling() {
     const contentContainer = document.getElementById('content-container');
@@ -45,6 +46,7 @@ async function run() {
 
     const triggerSynth = document.getElementById('trigger-synth-button');
     const decayInput = document.getElementById('decay-input');
+    const startGameButton = document.getElementById('start-game-button');
 
     if(triggerSynth) {
         triggerSynth.addEventListener('click', () => {
@@ -59,6 +61,11 @@ async function run() {
         });
     }
     
+    if(startGameButton) {
+        startGameButton.addEventListener('click', () => {
+            startGame();
+        });
+    }
 }
 
 run();
