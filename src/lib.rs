@@ -1,12 +1,11 @@
 use wasm_bindgen::prelude::*;
-use bevy::prelude::*;
 
 
+mod game;
 mod karplus_strong;
 mod random;
 
 pub use karplus_strong::KarplusStrong;
-
 
 #[wasm_bindgen]
 pub fn greet(name: &str) -> String {
@@ -16,23 +15,6 @@ pub fn greet(name: &str) -> String {
 #[wasm_bindgen]
 pub fn add(left: u64, right: u64) -> u64 {
     left + right
-}
-
-
-//Initialize bevy game
-#[wasm_bindgen]
-pub fn build_game(element_id: &str) {
-    App::new()
-        .add_plugins(DefaultPlugins.set(WindowPlugin {
-            primary_window: Some(Window {
-                // provide the ID selector string here
-                canvas: Some(element_id.into()),
-                // ... any other window properties ...
-                ..default()
-            }),
-            ..default()
-        }))
-        .run();
 }
 
 #[cfg(test)]

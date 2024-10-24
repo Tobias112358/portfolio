@@ -6,7 +6,7 @@ pub struct KarplusStrong {
     buffer: Vec<f32>,
     index: usize,
     decay: f32,
-    random: Random,
+    //random: Random,
 }
 
 #[wasm_bindgen]
@@ -26,7 +26,7 @@ impl KarplusStrong {
             buffer,
             index: 0,
             decay: 0.99, // Adjust this value to change the decay rate
-            random,
+            //random,
         }
     }
 
