@@ -1,5 +1,10 @@
 use wasm_bindgen::prelude::*;
 
+
+mod circular_buffer;
+
+pub use circular_buffer::CircularBuffer;
+
 #[wasm_bindgen]
 extern "C" {
     fn console_log(s: &str);
@@ -10,17 +15,21 @@ pub struct GranularSynth {
     sample: Vec<f32>, // The audio sample data
     sample_rate: f32,
     grains: Vec<Grain>,
+    is_playing: bool,
+    circular_buffer: CircularBuffer,
 }
 
 #[wasm_bindgen]
 impl GranularSynth {
     #[wasm_bindgen(constructor)]
-    pub fn new(sample_rate: f32) -> Self {
+    pub fn new(sample_rate: f32, buffer_size: usize) -> Self {
         console_error_panic_hook::set_once();
         GranularSynth {
             sample: Vec::new(),
             sample_rate,
             grains: Vec::new(),
+            is_playing: false,
+            circular_buffer: CircularBuffer::new(buffer_size),
         }
     }
 
@@ -38,7 +47,7 @@ impl GranularSynth {
     }
 
     #[wasm_bindgen]
-    pub fn generate(&self) -> Vec<f32> {
+    pub fn generate(&mut self) -> Vec<f32> {
         let mut output = Vec::new();
         for grain in &self.grains {
             let grain_sample = grain.sample();
@@ -48,7 +57,37 @@ impl GranularSynth {
                 output.extend(grain_sample);
             }
         }
+
+        // Write generated samples to the circular buffer
+        self.circular_buffer.write(&output);
         output
+    }
+
+    #[wasm_bindgen]
+    pub fn play(&mut self) {
+        self.is_playing = true;
+    }
+
+    #[wasm_bindgen]
+    pub fn stop(&mut self) {
+        self.is_playing = false;
+    }
+
+    pub fn is_playing(&self) -> bool {
+        self.is_playing
+    }
+
+    pub fn update(&mut self) {
+        if self.is_playing {
+            // Logic to update the current position or generate samples
+            //self.current_position += 1; // Increment position or handle looping
+            // You can also call self.generate() here if needed
+        }
+    }
+
+    // Method to read from the circular buffer
+    pub fn read_buffer(&self) -> Vec<f32> {
+        self.circular_buffer.read().to_vec()
     }
 }
 

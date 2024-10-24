@@ -30,3 +30,9 @@ Thumbs.db
 
 # Environment variables
 .env
+
+www/portfolio.js
+www/portfolio.d.js
+www/portfolio_bg.wasm.d.ts
+www/portfolio_bg.wasm
+www/package.json
