@@ -1,4 +1,4 @@
-import { build_game } from './portfolio.js';
+import { build_game } from '../pkg/portfolio.js';
 
 const startGame = async () => {
     build_game("#game-window");

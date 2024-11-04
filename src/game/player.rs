@@ -1,26 +1,38 @@
+use std::marker;
+
 use bevy::prelude::*;
 use bevy::input::mouse::MouseMotion;
 
+#[derive(Component)]
+pub struct Speed(u8);
 
 #[derive(Component)]
-pub struct MainGameCamera;
+pub struct Player;
 
-#[derive(Component)]
-struct Speed;
-
-pub fn setup_camera(mut commands: Commands) {
-    commands
-        .spawn((
-            Camera3dBundle::default(), 
-            MainGameCamera
-        ));
+#[derive(Bundle)]
+pub struct PlayerBundle {
+    marker: Player,
+    camera: Camera3dBundle,
+    speed: Speed,
 }
 
-pub fn update_camera(
+pub fn spawn_player(mut commands: Commands) {
+    commands
+        .spawn(
+            PlayerBundle {
+                marker: Player,
+                camera: Camera3dBundle::default(),
+                speed: Speed(3)
+            }
+        );
+}
+
+pub fn move_player(
     time: Res<Time>, 
     input: Res<ButtonInput<KeyCode>>, 
     mut mouse_motion: EventReader<MouseMotion>, 
-    mut camera: Query<&mut Transform, With<MainGameCamera>>
+    mut speed: Query<&mut Speed, With<Player>>,
+    mut camera: Query<&mut Transform, With<Player>>
 ) {
     let mut camera_transform = camera.single_mut();
     for motion in mouse_motion.read() {
@@ -34,23 +46,23 @@ pub fn update_camera(
     //camera move.
     if input.pressed(KeyCode::KeyW) {
         let forward_vec = camera_transform.forward().as_vec3();
-        camera_transform.translation += forward_vec * time.delta_seconds();
+        camera_transform.translation += forward_vec * time.delta_seconds() * speed.single_mut().0 as f32;
     } else if input.pressed(KeyCode::KeyS) {
         let forward_vec = camera_transform.forward().as_vec3();
-        camera_transform.translation -= forward_vec * time.delta_seconds();
+        camera_transform.translation -= forward_vec * time.delta_seconds() * speed.single_mut().0 as f32;
     }
     if input.pressed(KeyCode::KeyD) {
         let right_vec = camera_transform.right().as_vec3();
-        camera_transform.translation += right_vec * time.delta_seconds();
+        camera_transform.translation += right_vec * time.delta_seconds() * speed.single_mut().0 as f32;
     } else if input.pressed(KeyCode::KeyA) {
         let right_vec = camera_transform.right().as_vec3();
-        camera_transform.translation -= right_vec * time.delta_seconds();
+        camera_transform.translation -= right_vec * time.delta_seconds() * speed.single_mut().0 as f32;
     }
     if input.pressed(KeyCode::KeyE) {
         let up_vec = camera_transform.up().as_vec3();
-        camera_transform.translation += up_vec * time.delta_seconds();
+        camera_transform.translation += up_vec * time.delta_seconds() * speed.single_mut().0 as f32;
     } else if input.pressed(KeyCode::KeyQ) {
         let up_vec = camera_transform.up().as_vec3();
-        camera_transform.translation -= up_vec * time.delta_seconds();
+        camera_transform.translation -= up_vec * time.delta_seconds() * speed.single_mut().0 as f32;
     }
 }

@@ -22,12 +22,12 @@ jobs:
       - name: Build
         run: |
           wasm-pack build --target web
-          cp -r www/* pkg/
+          cp -r pkg www
       - name: Remove .gitignore from pkg
         run: rm pkg/.gitignore
       - name: Prepare for deployment
         run: |
-          cd pkg
+          cd www
           git init
           git config user.name github-actions
           git config user.email github-actions@github.com

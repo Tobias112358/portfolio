@@ -1,4 +1,4 @@
-import init, { KarplusStrong } from './portfolio.js';
+import init, { KarplusStrong } from '../pkg/portfolio.js';
 
 let audioContext;
 

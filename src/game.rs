@@ -3,9 +3,11 @@ use bevy::prelude::*;
 
 mod camera;
 mod scene;
+mod player;
 
-pub use camera::setup_camera;
-pub use scene::setup_scene;
+pub use camera::{setup_camera, update_camera};
+pub use scene::{setup_scene, update_scene};
+pub use player::{spawn_player, move_player};
 
 //Initialize 3D bevy game
 #[wasm_bindgen]
@@ -20,7 +22,7 @@ pub fn build_game(element_id: &str) {
             }),
             ..default()
         }))
-        .add_systems(Startup, setup_camera)
-        .add_systems(Startup, setup_scene)
+        .add_systems(Startup, (spawn_player, setup_scene))
+        .add_systems(Update, (update_scene, move_player))
         .run();
 }

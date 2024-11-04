@@ -1,4 +1,4 @@
-//import { greet } from './portfolio.js';   //development path is ../pkg/portfolio.js
+//import { greet } from '../pkg/portfolio.js';   //development path is ../pkg/portfolio.js
 import { initAudio, playKarplusStrong } from './karplusStrong.js';
 import { startGame } from './game.js';
 
@@ -7,6 +7,12 @@ function setupSectionScrolling() {
     const sections = document.querySelectorAll('.section');
     let currentSectionIndex = 0;
 
+/*************  ✨ Codeium Command ⭐  *************/
+    /**
+     * Scroll to the section with the given index.
+     * @param {number} index - The index of the section to scroll to.
+     */
+/******  531ab107-79f3-4c34-8aa3-6a240b5efc39  *******/
     function scrollToSection(index) {
         sections[index].scrollIntoView({ behavior: 'smooth' });
     }
