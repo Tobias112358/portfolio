@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use bevy::color::palettes::basic::{LIME, WHITE};
 use bevy::pbr::CascadeShadowConfigBuilder;
+use bevy::render::view::RenderLayers;
 use std::f32::consts::PI;
 
 #[derive(Component)]
@@ -42,16 +43,19 @@ pub fn setup_scene(
 
     // blue point light
     commands
-        .spawn(PointLightBundle {
+        .spawn((PointLightBundle {
             // transform: Transform::from_xyz(5.0, 8.0, 2.0),
-            transform: Transform::from_xyz(2.0, 5.0, -2.0),
+            transform: Transform::from_xyz(0.0, 5.0, 0.0),
             point_light: PointLight {
                 intensity: 1_000_000.0,
                 shadows_enabled: true,
                 ..default()
             },
             ..default()
-        });
+        },
+        RenderLayers::from_layers(&[0,1]),
+
+    ));
 
 
 }

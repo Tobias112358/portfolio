@@ -1,10 +1,14 @@
 use std::marker;
+use std::time::Duration;
 
 use bevy::prelude::*;
 use bevy::input::mouse::MouseMotion;
 use bevy::render::view::RenderLayers;
 use bevy::color::palettes::tailwind;
 use bevy::pbr::NotShadowCaster;
+use bevy::animation::{AnimationTargetId, RepeatAnimation};
+use bevy::scene::SceneInstanceReady;
+use bevy_scene_hook::{HookedSceneBundle, SceneHook};
 
 
 #[derive(Component)]
@@ -32,25 +36,49 @@ pub struct ViewModelCamera;
 #[derive(Component)]
 pub struct ForwardText;
 
-/// Used implicitly by all entities without a `RenderLayers` component.
-/// Our world model camera and all objects other than the player are on this layer.
-/// The light source belongs to both layers.
-const DEFAULT_RENDER_LAYER: usize = 0;
+#[derive(Component)]
+pub struct Arm;
 
-/// Used by the view model camera and the player's arm.
-/// The light source belongs to both layers.
+//Resouirces
+#[derive(Resource)]
+pub struct Animations {
+    animations: Vec<AnimationNodeIndex>,
+    #[allow(dead_code)]
+    graph: Handle<AnimationGraph>,
+}
+
 const VIEW_MODEL_RENDER_LAYER: usize = 1;
 
 pub fn spawn_player(
     mut commands: Commands, 
     asset_server: Res<AssetServer>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut graphs: ResMut<Assets<AnimationGraph>>,
 ) {
     
-    let arm = meshes.add(Cuboid::new(0.1, 0.1, 0.5));
-    let arm_material = materials.add(Color::from(tailwind::TEAL_200));
-    
+    let arm = asset_server.load("Arm.glb#Scene0");
+
+
+    //Animations
+    let mut graph = AnimationGraph::new();
+    let animations = graph.add_clips(
+        [
+            GltfAssetLabel::Animation(0).from_asset("Arm.glb"),
+            GltfAssetLabel::Animation(1).from_asset("Arm.glb"),
+        ]
+        .into_iter()
+        .map(|path| asset_server.load(path)),
+        1.0,
+        graph.root,
+    )
+    .collect();
+
+    let graph = graphs.add(graph);
+    commands.insert_resource(Animations {
+        animations,
+        graph: graph.clone(),
+    });
+
+
     commands.spawn(
         PlayerBundle {
             marker: Player,
@@ -92,7 +120,7 @@ pub fn spawn_player(
                     ..default()
                 },
                 projection: PerspectiveProjection {
-                    fov: 70.0_f32.to_radians(),
+                    fov: 73.0_f32.to_radians(),
                     ..default()
                 }
                 .into(),
@@ -103,14 +131,21 @@ pub fn spawn_player(
 
         // Spawn the player's right arm.
         parent.spawn((
-            MaterialMeshBundle {
-                mesh: arm,
-                material: arm_material,
-                transform: Transform::from_xyz(0.2, -0.1, -0.25),
-                ..default()
+            Arm,
+            HookedSceneBundle {
+                scene: SceneBundle {
+                    scene: arm,
+                    transform: Transform::from_xyz(0.22, -0.22, -0.28)
+                        .with_rotation(Quat::from_rotation_y(-0.4 * std::f32::consts::PI))
+                        .with_scale(Vec3::new(0.1,0.1,0.1)),
+                    ..default()
+                },
+                hook: SceneHook::new(|_, commands| {
+                    commands.insert(RenderLayers::layer(VIEW_MODEL_RENDER_LAYER));
+                    commands.insert(NotShadowCaster);
+                }),
             },
-            // Ensure the arm is only rendered by the view model camera.
-            RenderLayers::layer(VIEW_MODEL_RENDER_LAYER),
+            
             // The arm is free-floating, so shadows would look weird.
             NotShadowCaster,
         ));
@@ -141,10 +176,98 @@ pub fn spawn_player(
                     ..default()
                 }
             }),
+            TextSection::new(
+                "\nArmPos: ",
+                TextStyle {
+                    // This font is loaded and will be used instead of the default font.
+                    font_size: 60.0,
+                    ..default()
+                },
+            ),
+            TextSection::from_style(if cfg!(feature = "default_font") {
+                TextStyle {
+                    font_size: 60.0,
+                    // If no font is specified, the default font (a minimal subset of FiraMono) will be used.
+                    ..default()
+                }
+            } else {
+                // "default_font" feature is unavailable, load a font to use instead.
+                TextStyle {
+                    font_size: 60.0,
+                    ..default()
+                }
+            }),
+            TextSection::new(
+                "\nFOV: ",
+                TextStyle {
+                    // This font is loaded and will be used instead of the default font.
+                    font_size: 60.0,
+                    ..default()
+                },
+            ),
+            TextSection::from_style(if cfg!(feature = "default_font") {
+                TextStyle {
+                    font_size: 60.0,
+                    // If no font is specified, the default font (a minimal subset of FiraMono) will be used.
+                    ..default()
+                }
+            } else {
+                // "default_font" feature is unavailable, load a font to use instead.
+                TextStyle {
+                    font_size: 60.0,
+                    ..default()
+                }
+            }),
         ]),
         ForwardText,
     ));
 
+}
+
+pub fn debug_move_arm(
+    input: Res<ButtonInput<KeyCode>>, 
+    mut arm: Query<&mut Transform, With<Arm>>,
+    mut camera: Query<&mut Projection, With<ViewModelCamera>>
+) {
+    let mut transform = arm.single_mut();
+    if input.pressed(KeyCode::ArrowUp) {
+        transform.translation.y += 0.01;
+    }
+    if input.pressed(KeyCode::ArrowDown) {
+        transform.translation.y -= 0.01;
+    }
+    if input.pressed(KeyCode::ArrowRight) {
+        transform.translation.x += 0.01;
+    }
+    if input.pressed(KeyCode::ArrowLeft) {
+        transform.translation.x -= 0.01;
+    }
+    if input.pressed(KeyCode::Equal) {
+        transform.translation.z += 0.01;
+    }
+    if input.pressed(KeyCode::Minus) {
+        transform.translation.z -= 0.01;
+    }
+    if input.pressed(KeyCode::PageUp) {
+        let mut camera_perspective = camera.single_mut();
+        let Projection::Perspective(ref mut perspective) = camera_perspective.as_mut() else {
+            unreachable!(
+                "The `Projection` component was explicitly built with `Projection::Perspective`"
+            );
+        };
+    
+        perspective.fov += 1.0_f32.to_radians();
+    }
+    if input.pressed(KeyCode::PageDown) {
+        let mut camera_perspective = camera.single_mut();
+        let Projection::Perspective(ref mut perspective) = camera_perspective.as_mut() else {
+            unreachable!(
+                "The `Projection` component was explicitly built with `Projection::Perspective`"
+            );
+        };
+    
+        perspective.fov -= 1.0_f32.to_radians();
+    }
 }
 
 pub fn move_player(
@@ -196,14 +319,90 @@ pub fn move_player(
     }
 }
 
+pub fn player_actions(
+    input: Res<ButtonInput<KeyCode>>, 
+    mouse_button: Res<ButtonInput<MouseButton>>,
+    mut animation_players: Query<(&mut AnimationPlayer, &mut AnimationTransitions)>,
+    animations: Res<Animations>,
+    mut current_animation: Local<usize>,
+) {
+
+    for (mut player, mut transitions) in &mut animation_players {
+        let Some((&playing_animation_index, &active_animation)) = player.playing_animations().next() else {
+            continue;
+        };
+        if mouse_button.just_pressed(MouseButton::Left) {
+            *current_animation = 1;
+
+            transitions
+                .play(
+                    &mut player,
+                    animations.animations[*current_animation],
+                    Duration::from_millis(250),
+                )
+                .set_repeat(RepeatAnimation::Never);
+        }
+
+        if active_animation.is_finished() {
+            *current_animation = 0;
+
+            transitions
+                .play(&mut player, animations.animations[*current_animation], Duration::ZERO)
+                .repeat();
+        }
+
+    }
+
+}
+
 pub fn forward_text_update(
     mut texts: Query<&mut Text, With<ForwardText>>,
-    mut transform: Query<&mut Transform, With<Player>>
+    transform: Query<&mut Transform, (With<Player>, Without<Arm>)>,
+    arm: Query<&mut Transform, With<Arm>>,
+    camera: Query<&mut Projection, With<ViewModelCamera>>
 ) {
     let player_transform = transform.single();
     for mut text in &mut texts {
         let forward_vector = player_transform.forward().as_vec3();
         text.sections[1].value = format!("x: {:.2}, y: {:.2}, z: {:.2}", forward_vector.x, forward_vector.y, forward_vector.z);
         
+        let arm_vector = arm.single().translation;
+        text.sections[3].value = format!("x: {:.2}, y: {:.2}, z: {:.2}", arm_vector.x, arm_vector.y, arm_vector.z);
+
+        let projection = camera.single();
+        let Projection::Perspective(ref perspective) = projection else {
+            unreachable!(
+                "The `Projection` component was explicitly built with `Projection::Perspective`"
+            );
+        };    
+        
+        text.sections[5].value = format!("{:.0}", perspective.fov.to_degrees());
+        
+    }
+}
+
+pub fn run_animations(
+    mut commands: Commands,
+    animations: Res<Animations>,
+    mut players_query: Query<(Entity, &mut AnimationPlayer), Added<AnimationPlayer>>,
+) {
+    for (entity, mut player) in &mut players_query {
+        let mut transitions = AnimationTransitions::new();
+
+        // Make sure to start the animation via the `AnimationTransitions`
+        // component. The `AnimationTransitions` component wants to manage all
+        // the animations and will get confused if the animations are started
+        // directly via the `AnimationPlayer`.
+        
+        transitions
+                .play(&mut player, animations.animations[0], Duration::ZERO)
+                .repeat();
+
+        commands
+            .entity(entity)
+            .insert(animations.graph.clone())
+            .insert(transitions);
+
+
     }
 }

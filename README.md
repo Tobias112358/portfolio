@@ -49,3 +49,9 @@ This portfolio showcases my skills and projects using a combination of Rust for 
 ## Building for Production
 
 To create a production build, run:
+
+
+# Notes
+Use the command:
+```wasm-pack build --target web --out-dir ./www/pkg```
+to build wasm from root.
