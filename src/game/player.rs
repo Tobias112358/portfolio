@@ -1,15 +1,30 @@
 use std::marker;
 use std::time::Duration;
 
-use bevy::prelude::*;
+use bevy::color::palettes::tailwind::{YELLOW_400, YELLOW_900};
+use bevy::ecs::observer::TriggerTargets;
+use bevy::{animation, prelude::*};
 use bevy::input::mouse::MouseMotion;
 use bevy::render::view::RenderLayers;
-use bevy::color::palettes::tailwind;
-use bevy::pbr::NotShadowCaster;
+use bevy::color::palettes::{tailwind, css::*};
+use bevy::pbr::{NotShadowCaster, VolumetricFogSettings};
 use bevy::animation::{AnimationTargetId, RepeatAnimation};
 use bevy::scene::SceneInstanceReady;
+use bevy_rapier3d::na::{Vector, Vector3};
+use bevy_rapier3d::plugin::RapierContext;
+use bevy_rapier3d::prelude::{Ccd, CharacterAutostep, CharacterLength, CoefficientCombineRule, Collider, ColliderMassProperties, CollisionEvent, ContactForceEvent, ExternalForce, ExternalImpulse, Friction, GravityScale, KinematicCharacterController, LockedAxes, QueryFilter, Restitution, RigidBody, Sensor, SoftCcd};
 use bevy_scene_hook::{HookedSceneBundle, SceneHook};
 
+use bevy_tnua::prelude::*;
+use bevy_tnua_rapier3d::*;
+
+use crate::game::{
+    scene::RoomScene,
+    GameState,
+};
+
+use super::enemy::{Enemy, Health, IsHit};
+use super::AnimationEntityLink;
 
 #[derive(Component)]
 pub struct Speed(u8);
@@ -17,12 +32,19 @@ pub struct Speed(u8);
 #[derive(Component)]
 pub struct Player;
 
+
+#[derive(Component)]
+pub struct ColliderContactForce(Vec3);
+
 #[derive(Bundle)]
 pub struct PlayerBundle {
     marker: Player,
-    space: SpatialBundle,
+    rigidbody: RigidBody,
     speed: Speed,
+    contact_force: ColliderContactForce,
+    animations: Animations
 }
+
 
 //Camera markers
 
@@ -39,15 +61,40 @@ pub struct ForwardText;
 #[derive(Component)]
 pub struct Arm;
 
+
+#[derive(Component)]
+pub struct AttackRange;
+
 //Resouirces
-#[derive(Resource)]
+#[derive(Resource, Component)]
 pub struct Animations {
-    animations: Vec<AnimationNodeIndex>,
+    pub(crate) animations: Vec<AnimationNodeIndex>,
     #[allow(dead_code)]
-    graph: Handle<AnimationGraph>,
+    pub(crate) graph: Handle<AnimationGraph>,
+}
+
+#[derive(States, Default, Debug, Clone, PartialEq, Eq, Hash)]
+enum PlayerState {
+    #[default]
+    Idle,
+    Attacking,
 }
 
 const VIEW_MODEL_RENDER_LAYER: usize = 1;
+
+pub(super) fn plugin(app: &mut App) {
+    app
+        .add_plugins((
+            TnuaControllerPlugin::default(),
+            TnuaRapier3dPlugin::default(),
+        ))
+        .init_state::<PlayerState>()
+        .add_systems(Startup, spawn_player)
+        .add_event::<CollisionEvent>()
+        .add_event::<ContactForceEvent>()
+        .add_systems(Update, (move_player.in_set(TnuaUserControlsSystemSet), forward_text_update, run_animations, debug_move_arm, player_actions, display_contact_info, change_rigidbody_params))
+        .add_systems(OnEnter(PlayerState::Attacking), attack);
+}
 
 pub fn spawn_player(
     mut commands: Commands, 
@@ -73,23 +120,42 @@ pub fn spawn_player(
     .collect();
 
     let graph = graphs.add(graph);
-    commands.insert_resource(Animations {
-        animations,
-        graph: graph.clone(),
-    });
 
 
-    commands.spawn(
+    commands.spawn((
         PlayerBundle {
             marker: Player,
-            space: SpatialBundle {
-                transform: Transform::from_xyz(0.0, 2.0, 0.0),
-                ..default()
-            },
-            speed: Speed(3)
-        }
-    )
+            rigidbody: RigidBody::Dynamic,
+            speed: Speed(6),
+            contact_force: ColliderContactForce(Vec3::ZERO),
+            animations: Animations {
+                animations,
+                graph: graph.clone(),
+            }
+        },
+        TnuaController::default()
+    ))
+    //.insert(GravityScale(0.125))
+    .insert(Collider::cylinder(2.0, 0.5))
+    //.insert(Restitution::coefficient(0.4))
+    //.insert(ColliderMassProperties::Density(2.0))
+    //.insert(Ccd::enabled())
+    //.insert(SoftCcd {
+    //    prediction: 2.0
+    //})
+    //.insert(Friction {
+    //    coefficient: 0.7,
+    //    combine_rule: CoefficientCombineRule::Multiply,
+    //})
+    .insert(LockedAxes::ROTATION_LOCKED)
+    .insert(TransformBundle::from(Transform::from_xyz(0.0, 2.0, 0.0)))
+    .insert(TnuaRapier3dSensorShape(Collider::cylinder(1.98, 0.0)))
+    .insert(TnuaRapier3dIOBundle::default())
+    
+    
     .with_children(|parent| {
+
+        
         
         //Spawn world model camera
         parent.spawn((
@@ -149,6 +215,28 @@ pub fn spawn_player(
             // The arm is free-floating, so shadows would look weird.
             NotShadowCaster,
         ));
+
+        parent.spawn((
+            SpotLightBundle {
+                spot_light: SpotLight {
+                    color: WHITE.into(),
+                    intensity: 1_000_000.0,
+                    range: 10_000.0,
+                    ..default()
+                },
+                transform: Transform::from_xyz(0.0, 0.0, 0.0),
+                ..default()
+            },
+            
+        )
+        );
+
+        parent.spawn((
+            AttackRange,
+            Collider::ball(1.0),
+            TransformBundle::from(Transform::from_xyz(0.0, 0.75, -5.0)),
+            Sensor
+        ));
     });
     
     // Text with multiple sections
@@ -177,7 +265,7 @@ pub fn spawn_player(
                 }
             }),
             TextSection::new(
-                "\nArmPos: ",
+                "\nColForceVec: ",
                 TextStyle {
                     // This font is loaded and will be used instead of the default font.
                     font_size: 60.0,
@@ -275,8 +363,17 @@ pub fn move_player(
     input: Res<ButtonInput<KeyCode>>, 
     mut mouse_motion: EventReader<MouseMotion>, 
     mut speed: Query<&mut Speed, With<Player>>,
-    mut camera: Query<&mut Transform, With<Player>>
+    mut camera: Query<&mut Transform, With<Player>>,
+    contact_force_query: Query<&ColliderContactForce, (With<Player>, Without<Arm>)>,  
+    mut controller_query: Query<&mut TnuaController, With<Player>>  
 ) {
+
+    let Ok(mut controller) = controller_query.get_single_mut() else {
+        println!("Failed to get: {:?}", controller_query);
+        return;
+    };
+
+
     let mut camera_transform = camera.single_mut();
     for motion in mouse_motion.read() {
         let yaw = -motion.delta.x * 0.003;
@@ -286,52 +383,94 @@ pub fn move_player(
         camera_transform.rotate_local_x(pitch);
     }
 
+    let mut movement_vector: Vec3 = camera_transform.translation;
+    
+    let mut direction = Vec3::ZERO;
+
     //camera move.
     if input.pressed(KeyCode::KeyW) {
         let mut forward_vec = camera_transform.forward().as_vec3().clone();
 
         forward_vec.y = 0.0;
 
-        camera_transform.translation += forward_vec * time.delta_seconds() * speed.single_mut().0 as f32;
+        movement_vector += forward_vec * time.delta_seconds() * speed.single_mut().0 as f32;
+
+        direction -= Vec3::Z;
+
     } else if input.pressed(KeyCode::KeyS) {
         let mut forward_vec = camera_transform.forward().as_vec3().clone();
 
         forward_vec.y = 0.0;
-        camera_transform.translation -= forward_vec * time.delta_seconds() * speed.single_mut().0 as f32;
+        movement_vector -= forward_vec * time.delta_seconds() * speed.single_mut().0 as f32;
+
+        
+        direction += Vec3::Z;
     }
     if input.pressed(KeyCode::KeyD) {
         let mut right_vec = camera_transform.right().as_vec3().clone();
 
         right_vec.y = 0.0;
-        camera_transform.translation += right_vec * time.delta_seconds() * speed.single_mut().0 as f32;
+        movement_vector += right_vec * time.delta_seconds() * speed.single_mut().0 as f32;
+
+        
+        direction -= Vec3::X;
     } else if input.pressed(KeyCode::KeyA) {
         let mut right_vec = camera_transform.right().as_vec3().clone();
 
         right_vec.y = 0.0;
-        camera_transform.translation -= right_vec * time.delta_seconds() * speed.single_mut().0 as f32;
+        movement_vector -= right_vec * time.delta_seconds() * speed.single_mut().0 as f32;
+        
+        direction += Vec3::X;
     }
     if input.pressed(KeyCode::KeyE) {
         let up_vec = camera_transform.up().as_vec3();
-        camera_transform.translation += up_vec * time.delta_seconds() * speed.single_mut().0 as f32;
+        movement_vector += up_vec * time.delta_seconds() * speed.single_mut().0 as f32;
     } else if input.pressed(KeyCode::KeyQ) {
         let up_vec = camera_transform.up().as_vec3();
-        camera_transform.translation -= up_vec * time.delta_seconds() * speed.single_mut().0 as f32;
+        movement_vector -= up_vec * time.delta_seconds() * speed.single_mut().0 as f32;
     }
+
+    //println!("{:?}", direction);
+
+    controller.basis(TnuaBuiltinWalk {
+        // The `desired_velocity` determines how the character will move.
+        desired_velocity: direction * 10.0,
+        // The `float_height` must be greater (even if by little) from the distance between the
+        // character's center and the lowest point of its collider.
+        float_height: 3.5,
+        // `TnuaBuiltinWalk` has many other fields for customizing the movement - but they have
+        // sensible defaults. Refer to the `TnuaBuiltinWalk`'s documentation to learn what they do.
+        ..Default::default()
+    });
+
+
+
+    camera_transform.translation = movement_vector;// - contact_force_query.single().0;
 }
 
-pub fn player_actions(
+
+fn player_actions(
     input: Res<ButtonInput<KeyCode>>, 
     mouse_button: Res<ButtonInput<MouseButton>>,
     mut animation_players: Query<(&mut AnimationPlayer, &mut AnimationTransitions)>,
-    animations: Res<Animations>,
+    animations_query: Query<(&Animations, &AnimationEntityLink), With<Player>>,
     mut current_animation: Local<usize>,
+    player_state: Res<State<PlayerState>>,
+    mut player_next_state: ResMut<NextState<PlayerState>>,
 ) {
+    
+    if animation_players.is_empty() {
+        return;
+    }
 
-    for (mut player, mut transitions) in &mut animation_players {
-        let Some((&playing_animation_index, &active_animation)) = player.playing_animations().next() else {
-            continue;
+    let (animations, animation_entity) = animations_query.single();
+
+    if let Ok((mut player, mut transitions)) = animation_players.get_mut(animation_entity.0) {
+        let Some((&_playing_animation_index, &active_animation)) = player.playing_animations().next() else {
+            return;
         };
-        if mouse_button.just_pressed(MouseButton::Left) {
+        if mouse_button.just_pressed(MouseButton::Left) && player_state.get() == &PlayerState::Idle {
+            player_next_state.set(PlayerState::Attacking);
             *current_animation = 1;
 
             transitions
@@ -359,14 +498,16 @@ pub fn forward_text_update(
     mut texts: Query<&mut Text, With<ForwardText>>,
     transform: Query<&mut Transform, (With<Player>, Without<Arm>)>,
     arm: Query<&mut Transform, With<Arm>>,
-    camera: Query<&mut Projection, With<ViewModelCamera>>
+    camera: Query<&mut Projection, With<ViewModelCamera>>,
+    contact_force_query: Query<&ColliderContactForce, (With<Player>, Without<Arm>)>,
 ) {
     let player_transform = transform.single();
     for mut text in &mut texts {
         let forward_vector = player_transform.forward().as_vec3();
+        
         text.sections[1].value = format!("x: {:.2}, y: {:.2}, z: {:.2}", forward_vector.x, forward_vector.y, forward_vector.z);
         
-        let arm_vector = arm.single().translation;
+        let arm_vector = contact_force_query.single().0;
         text.sections[3].value = format!("x: {:.2}, y: {:.2}, z: {:.2}", arm_vector.x, arm_vector.y, arm_vector.z);
 
         let projection = camera.single();
@@ -383,10 +524,22 @@ pub fn forward_text_update(
 
 pub fn run_animations(
     mut commands: Commands,
-    animations: Res<Animations>,
-    mut players_query: Query<(Entity, &mut AnimationPlayer), Added<AnimationPlayer>>,
+    animations_query: Query<(&Animations, &AnimationEntityLink), Added<AnimationEntityLink>>,
+    mut players_query: Query<(Entity, &mut AnimationPlayer), With<AnimationPlayer>>,
 ) {
-    for (entity, mut player) in &mut players_query {
+    
+    if players_query.is_empty() {
+        return;
+    }
+
+
+    if animations_query.is_empty() {
+        return;
+    }
+
+    let (animations, animation_entity) = animations_query.single();
+
+    if let Ok((entity, mut player)) = players_query.get_mut(animation_entity.0) {        
         let mut transitions = AnimationTransitions::new();
 
         // Make sure to start the animation via the `AnimationTransitions`
@@ -405,4 +558,215 @@ pub fn run_animations(
 
 
     }
+}
+
+/// Currently [`RenderLayers`] are not applied to children of a scene.
+/// This [`SceneInstanceReady`] observer applies the [`RenderLayers`]
+/// of a [`SceneRoot`] to all children with a [`Transform`] and without a [`RenderLayers`].
+/// 
+/// See [#12461](https://github.com/bevyengine/bevy/issues/12461) for current status.
+pub fn apply_render_layers_to_children(
+    mut commands: Commands,
+    children: Query<&Children>,
+    transforms: Query<&Transform, Without<RenderLayers>>,
+    arm_query: Query<(Entity, &RenderLayers), With<Arm>>,
+  ) {
+    println!("Apply render layers to children");
+    let Ok((parent, render_layers)) = arm_query.get_single() else {
+        return;
+    };
+    children.iter_descendants(parent).for_each(|entity| {
+      if transforms.contains(entity) {
+        commands.entity(entity).insert(render_layers.clone());
+      }
+    });
+  }
+
+pub fn change_rigidbody_params(
+    mut player_query: Query<(
+        Entity, 
+        &mut Friction, 
+        &mut SoftCcd,
+    ), With<Player>>,
+    input: Res<ButtonInput<KeyCode>>, 
+) {
+
+    if player_query.is_empty() {
+        //println!("{:?}",player_query);
+        return;
+    }
+
+    let (player, mut friction, mut soft_ccd) = player_query.single_mut();
+
+    if input.pressed(KeyCode::Numpad1) {
+        friction.coefficient = friction.coefficient + 0.1;
+        println!("friction.coefficient: {}", friction.coefficient);
+    }
+    if input.pressed(KeyCode::Numpad2) {
+        friction.coefficient = friction.coefficient - 0.1;
+        println!("friction.coefficient: {}", friction.coefficient);
+    }
+    if input.pressed(KeyCode::Numpad5) {
+        soft_ccd.prediction = soft_ccd.prediction + 0.1;
+        println!("soft_ccd.enabled: {}", soft_ccd.prediction);
+    }
+    if input.pressed(KeyCode::Numpad6) {
+        soft_ccd.prediction = soft_ccd.prediction - 0.1;
+        println!("soft_ccd.enabled: {}", soft_ccd.prediction);
+    }
+}
+
+pub fn update_collider_params(
+mut commands: Commands,
+player_query: Query<Entity, With<Player>>,
+) {
+println!("update_collider_params: {:?}", player_query.single());
+
+}
+
+pub fn display_contact_info(rapier_context: Res<RapierContext>, 
+    mut player_query: Query<(Entity, &mut ColliderContactForce), With<Player>>,
+    room_query: Query<Entity, With<RoomScene>>,
+    time: Res<Time>, 
+
+) {
+    if room_query.is_empty() || player_query.is_empty() {
+        return;
+    }
+
+
+    let (player_entity, mut player_contact_force) = player_query.single_mut(); // A first entity with a collider attached.
+    let room_entity = room_query.single(); // A second entity with a collider attached.
+
+    player_contact_force.0 = Vec3::ZERO;
+    /* Find the contact pair, if it exists, between two colliders. */
+    if let Some(contact_pair) = rapier_context.contact_pair(player_entity, room_entity) {
+        // The contact pair exists meaning that the broad-phase identified a potential contact.
+
+        
+
+        // We may also read the contact manifolds to access the contact geometry.
+        for manifold in contact_pair.manifolds() {
+            //println!("Local-space contact normal: {}", manifold.local_n1());
+            //println!("Local-space contact normal: {}", manifold.local_n2());
+            //println!("World-space contact normal: {}", manifold.normal());
+
+            if player_contact_force.0 == Vec3::ZERO {
+                player_contact_force.0 = manifold.local_n2();
+            } else {
+                player_contact_force.0 = (player_contact_force.0 + manifold.local_n2()).normalize();
+            }
+
+            // Read the geometric contacts.
+            for contact_point in manifold.points() {
+                // Keep in mind that all the geometric contact data are expressed in the local-space of the colliders.
+                //println!(
+                //    "Found local contact point 1: {:?}",
+                //    contact_point.local_p1()
+                //);
+                //println!("Found contact distance: {:?}", contact_point.dist()); // Negative if there is a penetration.
+                //println!("Found contact impulse: {}", contact_point.raw.data.impulse);
+                //println!(
+                //    "Found friction impulse: {}",
+                //    contact_point.raw.data.tangent_impulse
+                //);
+            }
+
+            // Read the solver contacts.
+            for solver_contact in &manifold.raw.data.solver_contacts {
+                // Keep in mind that all the solver contact data are expressed in world-space.
+                //println!("Found solver contact point: {:?}", solver_contact.point);
+                // The solver contact distance is negative if there is a penetration.
+                //println!("Found solver contact distance: {:?}", solver_contact.dist);
+            }
+        }
+    }
+}
+
+
+fn attack (
+    mut commands: Commands,
+    rapier_context: Res<RapierContext>,
+    player_query: Query<(Entity, &Transform), With<Player>>,
+    player_state: Res<State<PlayerState>>,
+    mut player_next_state: ResMut<NextState<PlayerState>>,
+    attack_range_query: Query<(&GlobalTransform, &Transform, &Collider), With<AttackRange>>,
+    mut enemy_query: Query<Entity, With<Enemy>>,
+    mut enemy_query_mut: Query< (&mut Health, Entity, &mut IsHit), With<Enemy>>,
+    parent_query: Query<&Parent>,
+) {
+    println!("ATTACK!!!");
+
+    let Ok((player_entity, player_transform)) = player_query.get_single() else {
+        return;
+    };
+
+    let predicate = |handle| {
+        // We can use a query to bevy inside the predicate.
+
+        println!("handle: {:?}", handle);
+
+        let Ok(parent) = parent_query.get(handle) else {
+            return false;
+        };
+
+        println!("PARENT of  {:?}: {:?}, {:?}", handle, parent, parent.get());
+
+        enemy_query
+            .get(parent.get())
+            .is_ok()
+    };
+
+    
+    let filter = QueryFilter::default()
+    .predicate(&predicate);
+
+    /*let Ok(entity) = player_query.get_single() else {
+        return;
+    };
+
+    commands.entity(entity).insert(shape.clone());
+    */
+
+    let Ok((ar_global_transform, ar_transform, ar_collider)) = attack_range_query.get_single() else {
+        return;
+    };
+
+    rapier_context.intersections_with_shape(ar_global_transform.translation(), ar_transform.rotation, ar_collider, filter, |entity| {
+        println!("TEST {:?} intersects our shape.", entity);
+
+        let Ok(parent) = parent_query.get(entity) else {
+            return false;
+        };
+
+        let Ok((mut health, entity, mut is_hit)) = enemy_query_mut.get_mut(parent.get()) else {
+            return false;
+        };
+
+        let mut attack_vector = player_transform.forward().as_vec3();
+
+        attack_vector.y = 1.25;
+
+        
+        //commands.entity(entity).remove::<LockedAxes>();
+
+        commands.entity(entity).insert(ExternalImpulse {
+            impulse: attack_vector * 200.0,
+            torque_impulse: attack_vector * 500.0,
+        });
+
+        if health.0 >= 10 {
+            health.0 -= 10;
+        } else {
+            health.0 = 0;
+        }
+
+        is_hit.is_hit = true;
+
+
+        true // Return `false` instead if we want to stop searching for other colliders that contain this point.
+    });
+
+    player_next_state.set(PlayerState::Idle);
+
 }
