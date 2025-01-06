@@ -2,17 +2,15 @@
 import { initAudio, playKarplusStrong } from './karplusStrong.js';
 import { startGame } from './game.js';
 
-function setupSectionScrolling() {
+function setupSectionScrolling(gameEnabled = false) {
     const contentContainer = document.getElementById('content-container');
     const sections = document.querySelectorAll('.section');
     let currentSectionIndex = 0;
 
-/*************  ✨ Codeium Command ⭐  *************/
     /**
      * Scroll to the section with the given index.
      * @param {number} index - The index of the section to scroll to.
      */
-/******  531ab107-79f3-4c34-8aa3-6a240b5efc39  *******/
     function scrollToSection(index) {
         sections[index].scrollIntoView({ behavior: 'smooth' });
     }
@@ -27,7 +25,16 @@ function setupSectionScrolling() {
         scrollToSection(currentSectionIndex);
     }
 
-    contentContainer.addEventListener('wheel', handleWheel, { passive: false });
+    if(!gameEnabled) {
+        console.log("enabled scroll");
+        //contentContainer.addEventListener('wheel', handleWheel, { passive: false });
+    } else {
+        console.log("disabled scroll");
+        contentContainer.removeEventListener('wheel', handleWheel);
+        
+    }
+
+    
 }
 
 function workClick() {
@@ -47,7 +54,7 @@ function workClick() {
 
 async function run() {
     await initAudio();
-    setupSectionScrolling();
+    //setupSectionScrolling(false);
     workClick();
 
     const triggerSynth = document.getElementById('trigger-synth-button');
@@ -68,7 +75,19 @@ async function run() {
     }
     
     if(startGameButton) {
-        startGameButton.addEventListener('click', () => {
+        startGameButton.addEventListener('click', async () => {
+            await document.getElementById('game-window').requestPointerLock();
+
+            const mouseGlow = document.querySelector('.mouse-glow');
+            mouseGlow.style.display = 'none';
+            // Assuming you have an element with the class 'myClass'
+            var element = document.querySelector('.content');
+
+            // Remove the class 'myClass'
+            element.classList.remove('content');
+
+            
+            setupSectionScrolling(true);
             startGame();
         });
     }

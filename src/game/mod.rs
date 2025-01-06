@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 use wasm_bindgen::prelude::*;
 
+
 mod camera;
 pub(crate) mod player;
 pub(crate) mod scene;
@@ -23,6 +24,7 @@ enum GameState {
 pub struct AnimationEntityLink(pub Entity);
 
 
+
 #[wasm_bindgen]
 pub fn build_game(element_id: &str) {
     App::new()
@@ -37,7 +39,7 @@ pub fn build_game(element_id: &str) {
         }))
         .insert_resource(AmbientLight::NONE)
         .init_state::<GameState>()
-        .add_plugins((HookPlugin, RapierDebugRenderPlugin::default(), RapierPhysicsPlugin::<NoUserData>::default()))
+        .add_plugins((HookPlugin, /*RapierDebugRenderPlugin::default(),*/ RapierPhysicsPlugin::<NoUserData>::default()))
         .add_plugins((scene::plugin, player::plugin, file_system_interaction::plugin, enemy::plugin, combat_manager::plugin))
         //.add_systems(PreStartup, load_room)
         .add_systems(Update, link_animations)

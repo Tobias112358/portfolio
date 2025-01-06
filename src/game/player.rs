@@ -3,6 +3,9 @@ use std::time::Duration;
 
 use bevy::color::palettes::tailwind::{YELLOW_400, YELLOW_900};
 use bevy::ecs::observer::TriggerTargets;
+use bevy::render::camera::RenderTarget;
+use bevy::render::render_asset::RenderAssetUsages;
+use bevy::render::render_resource::{Extent3d, TextureDimension, TextureFormat, TextureUsages};
 use bevy::{animation, prelude::*};
 use bevy::input::mouse::MouseMotion;
 use bevy::render::view::RenderLayers;
@@ -23,7 +26,10 @@ use crate::game::{
     GameState,
 };
 
-use super::enemy::{Enemy, Health, IsHit};
+use super::{
+    enemy::{Enemy},
+    combat_manager::{ Health, IsHit, AttackRange},
+};
 use super::AnimationEntityLink;
 
 #[derive(Component)]
@@ -42,7 +48,8 @@ pub struct PlayerBundle {
     rigidbody: RigidBody,
     speed: Speed,
     contact_force: ColliderContactForce,
-    animations: Animations
+    animations: Animations,
+    health: Health,
 }
 
 
@@ -54,6 +61,9 @@ pub struct WorldModelCamera;
 #[derive(Component)]
 pub struct ViewModelCamera;
 
+#[derive(Component)]
+pub struct TextureCamera;
+
 //Text Marker
 #[derive(Component)]
 pub struct ForwardText;
@@ -61,9 +71,6 @@ pub struct ForwardText;
 #[derive(Component)]
 pub struct Arm;
 
-
-#[derive(Component)]
-pub struct AttackRange;
 
 //Resouirces
 #[derive(Resource, Component)]
@@ -92,13 +99,14 @@ pub(super) fn plugin(app: &mut App) {
         .add_systems(Startup, spawn_player)
         .add_event::<CollisionEvent>()
         .add_event::<ContactForceEvent>()
-        .add_systems(Update, (move_player.in_set(TnuaUserControlsSystemSet), forward_text_update, run_animations, debug_move_arm, player_actions, display_contact_info, change_rigidbody_params))
+        .add_systems(Update, (move_player.in_set(TnuaUserControlsSystemSet), /*forward_text_update,*/ run_animations, debug_move_arm, player_actions, display_contact_info, change_rigidbody_params))
         .add_systems(OnEnter(PlayerState::Attacking), attack);
 }
 
 pub fn spawn_player(
     mut commands: Commands, 
     asset_server: Res<AssetServer>,
+    mut images: ResMut<Assets<Image>>,
     mut graphs: ResMut<Assets<AnimationGraph>>,
 ) {
     
@@ -131,7 +139,11 @@ pub fn spawn_player(
             animations: Animations {
                 animations,
                 graph: graph.clone(),
-            }
+            },
+            health: Health {
+                current_health: 100,
+                max_health: 100,
+            },
         },
         TnuaController::default()
     ))
@@ -140,19 +152,15 @@ pub fn spawn_player(
     //.insert(Restitution::coefficient(0.4))
     //.insert(ColliderMassProperties::Density(2.0))
     //.insert(Ccd::enabled())
-    //.insert(SoftCcd {
-    //    prediction: 2.0
-    //})
+    .insert(SoftCcd {
+        prediction: 2.0
+    })
     //.insert(Friction {
     //    coefficient: 0.7,
     //    combine_rule: CoefficientCombineRule::Multiply,
     //})
     .insert(LockedAxes::ROTATION_LOCKED)
     .insert(TransformBundle::from(Transform::from_xyz(0.0, 2.0, 0.0)))
-    .insert(TnuaRapier3dSensorShape(Collider::cylinder(1.98, 0.0)))
-    .insert(TnuaRapier3dIOBundle::default())
-    
-    
     .with_children(|parent| {
 
         
@@ -194,6 +202,68 @@ pub fn spawn_player(
             },
             RenderLayers::layer(VIEW_MODEL_RENDER_LAYER),
         ));
+
+        let size = Extent3d {
+            width: 512,
+            height: 512,
+            ..default()
+        };
+
+        let mut image = Image::new_fill(
+            size,
+            TextureDimension::D2,
+            &[0, 0, 0, 0],
+            TextureFormat::Bgra8UnormSrgb,
+            RenderAssetUsages::default(),
+        );
+        // You need to set these texture usage flags in order to use the image as a render target
+        image.texture_descriptor.usage =
+            TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST | TextureUsages::RENDER_ATTACHMENT;
+    
+    
+        
+        let image_handle = images.add(image);
+
+        let texture_camera = parent.spawn((
+                TextureCamera,
+                Camera2d,
+                Camera {
+                    target: RenderTarget::Image(image_handle.clone()),
+                    ..default()
+                },
+            ))
+            .id();
+
+            parent
+            .spawn((
+                NodeBundle {
+                    style: Style {
+                        position_type: PositionType::Absolute,
+                        width: Val::Percent(100.),
+                        height: Val::Percent(100.),
+                        ..default()
+                    },
+                    
+                    transform: Transform::from_translation(Vec3::ZERO),
+                    visibility: Visibility::Visible,
+                    background_color: BackgroundColor(Color::WHITE),
+                    //z_index: ZIndex::Global(10),
+                    
+                    ..default()
+                },
+                TargetCamera(texture_camera),
+            ))
+            .with_children(|parent| {
+                parent.spawn(
+                    TextBundle::from_section(
+                        "This is a cube",  
+                        TextStyle {
+                            font_size: 40.0,
+                            ..default()
+                        }
+                    )
+                );
+            });
 
         // Spawn the player's right arm.
         parent.spawn((
@@ -238,7 +308,7 @@ pub fn spawn_player(
             Sensor
         ));
     });
-    
+    /*
     // Text with multiple sections
     commands.spawn((
         // Create a TextBundle that has a Text with a list of sections.
@@ -309,7 +379,7 @@ pub fn spawn_player(
         ]),
         ForwardText,
     ));
-
+    */
 }
 
 pub fn debug_move_arm(
@@ -687,7 +757,7 @@ pub fn display_contact_info(rapier_context: Res<RapierContext>,
 fn attack (
     mut commands: Commands,
     rapier_context: Res<RapierContext>,
-    player_query: Query<(Entity, &Transform), With<Player>>,
+    player_query: Query<(&Children, Entity, &Transform), With<Player>>,
     player_state: Res<State<PlayerState>>,
     mut player_next_state: ResMut<NextState<PlayerState>>,
     attack_range_query: Query<(&GlobalTransform, &Transform, &Collider), With<AttackRange>>,
@@ -695,22 +765,23 @@ fn attack (
     mut enemy_query_mut: Query< (&mut Health, Entity, &mut IsHit), With<Enemy>>,
     parent_query: Query<&Parent>,
 ) {
-    println!("ATTACK!!!");
+    //println!("ATTACK!!!");
 
-    let Ok((player_entity, player_transform)) = player_query.get_single() else {
+    let Ok((player_children, player_entity, player_transform)) = player_query.get_single() else {
+        println!("Faile");
         return;
     };
 
     let predicate = |handle| {
         // We can use a query to bevy inside the predicate.
 
-        println!("handle: {:?}", handle);
+        //println!("handle: {:?}", handle);
 
         let Ok(parent) = parent_query.get(handle) else {
             return false;
         };
 
-        println!("PARENT of  {:?}: {:?}, {:?}", handle, parent, parent.get());
+        //println!("PARENT of  {:?}: {:?}, {:?}", handle, parent, parent.get());
 
         enemy_query
             .get(parent.get())
@@ -728,45 +799,48 @@ fn attack (
     commands.entity(entity).insert(shape.clone());
     */
 
-    let Ok((ar_global_transform, ar_transform, ar_collider)) = attack_range_query.get_single() else {
-        return;
-    };
-
-    rapier_context.intersections_with_shape(ar_global_transform.translation(), ar_transform.rotation, ar_collider, filter, |entity| {
-        println!("TEST {:?} intersects our shape.", entity);
-
-        let Ok(parent) = parent_query.get(entity) else {
-            return false;
+    for player_child in player_children {
+        let Ok((ar_global_transform, ar_transform, ar_collider)) = attack_range_query.get(*player_child) else {
+            continue;
         };
 
-        let Ok((mut health, entity, mut is_hit)) = enemy_query_mut.get_mut(parent.get()) else {
-            return false;
-        };
-
-        let mut attack_vector = player_transform.forward().as_vec3();
-
-        attack_vector.y = 1.25;
-
-        
-        //commands.entity(entity).remove::<LockedAxes>();
-
-        commands.entity(entity).insert(ExternalImpulse {
-            impulse: attack_vector * 200.0,
-            torque_impulse: attack_vector * 500.0,
+        rapier_context.intersections_with_shape(ar_global_transform.translation(), ar_transform.rotation, ar_collider, filter, |entity| {
+            //println!("TEST {:?} intersects our shape.", entity);
+    
+            let Ok(parent) = parent_query.get(entity) else {
+                return false;
+            };
+    
+            let Ok((mut health, entity, mut is_hit)) = enemy_query_mut.get_mut(parent.get()) else {
+                return false;
+            };
+    
+            let mut attack_vector = player_transform.forward().as_vec3();
+    
+            attack_vector.y = 1.25;
+    
+            
+            //commands.entity(entity).remove::<LockedAxes>();
+    
+            commands.entity(entity).insert(ExternalImpulse {
+                impulse: attack_vector * 200.0,
+                torque_impulse: attack_vector * 500.0,
+            });
+    
+            if health.current_health >= 10 {
+                health.current_health -= 10;
+            } else {
+                health.current_health = 0;
+            }
+    
+            is_hit.is_hit = true;
+    
+    
+            true // Return `false` instead if we want to stop searching for other colliders that contain this point.
         });
+    
+        player_next_state.set(PlayerState::Idle);
+    }
 
-        if health.0 >= 10 {
-            health.0 -= 10;
-        } else {
-            health.0 = 0;
-        }
-
-        is_hit.is_hit = true;
-
-
-        true // Return `false` instead if we want to stop searching for other colliders that contain this point.
-    });
-
-    player_next_state.set(PlayerState::Idle);
 
 }
