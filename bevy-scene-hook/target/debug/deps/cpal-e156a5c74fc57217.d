@@ -1,0 +1,13 @@
+/home/tobias/bevy-scene-hook/target/debug/deps/libcpal-e156a5c74fc57217.rmeta: /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cpal-0.15.3/src/lib.rs /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cpal-0.15.3/src/error.rs /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cpal-0.15.3/src/host/mod.rs /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cpal-0.15.3/src/host/alsa/mod.rs /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cpal-0.15.3/src/host/alsa/enumerate.rs /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cpal-0.15.3/src/host/null/mod.rs /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cpal-0.15.3/src/platform/mod.rs /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cpal-0.15.3/src/samples_formats.rs /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cpal-0.15.3/src/traits.rs
+
+/home/tobias/bevy-scene-hook/target/debug/deps/cpal-e156a5c74fc57217.d: /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cpal-0.15.3/src/lib.rs /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cpal-0.15.3/src/error.rs /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cpal-0.15.3/src/host/mod.rs /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cpal-0.15.3/src/host/alsa/mod.rs /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cpal-0.15.3/src/host/alsa/enumerate.rs /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cpal-0.15.3/src/host/null/mod.rs /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cpal-0.15.3/src/platform/mod.rs /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cpal-0.15.3/src/samples_formats.rs /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cpal-0.15.3/src/traits.rs
+
+/home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cpal-0.15.3/src/lib.rs:
+/home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cpal-0.15.3/src/error.rs:
+/home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cpal-0.15.3/src/host/mod.rs:
+/home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cpal-0.15.3/src/host/alsa/mod.rs:
+/home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cpal-0.15.3/src/host/alsa/enumerate.rs:
+/home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cpal-0.15.3/src/host/null/mod.rs:
+/home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cpal-0.15.3/src/platform/mod.rs:
+/home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cpal-0.15.3/src/samples_formats.rs:
+/home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/cpal-0.15.3/src/traits.rs:

@@ -1,0 +1,12 @@
+/home/tobias/bevy-scene-hook/target/debug/deps/liblibloading-0d7c0351e371c2e8.rmeta: /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libloading-0.7.4/src/lib.rs /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libloading-0.7.4/src/changelog.rs /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libloading-0.7.4/src/os/mod.rs /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libloading-0.7.4/src/os/unix/mod.rs /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libloading-0.7.4/src/os/unix/consts.rs /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libloading-0.7.4/src/util.rs /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libloading-0.7.4/src/error.rs /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libloading-0.7.4/src/safe.rs
+
+/home/tobias/bevy-scene-hook/target/debug/deps/libloading-0d7c0351e371c2e8.d: /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libloading-0.7.4/src/lib.rs /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libloading-0.7.4/src/changelog.rs /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libloading-0.7.4/src/os/mod.rs /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libloading-0.7.4/src/os/unix/mod.rs /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libloading-0.7.4/src/os/unix/consts.rs /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libloading-0.7.4/src/util.rs /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libloading-0.7.4/src/error.rs /home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libloading-0.7.4/src/safe.rs
+
+/home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libloading-0.7.4/src/lib.rs:
+/home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libloading-0.7.4/src/changelog.rs:
+/home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libloading-0.7.4/src/os/mod.rs:
+/home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libloading-0.7.4/src/os/unix/mod.rs:
+/home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libloading-0.7.4/src/os/unix/consts.rs:
+/home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libloading-0.7.4/src/util.rs:
+/home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libloading-0.7.4/src/error.rs:
+/home/tobias/.cargo/registry/src/index.crates.io-6f17d22bba15001f/libloading-0.7.4/src/safe.rs:
