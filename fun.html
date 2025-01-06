@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fun Page</title>
+    <link rel="stylesheet" href="style/style.css">
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="fun.html">Fun</a></li>
+        </ul>
+    </nav>
+    <div class="content" id="content-container">
+        <div class="mouse-glow"></div>
+
+        <div class="section">
+            <h1>Fun Page</h1>
+            <br />
+            <button id="trigger-synth-button">Pluck</button>
+        </div>
+        <div class="section">
+            <h1>Bevy Game</h1>
+            <br />
+            <button id="start-game-button">Start</button>
+            <div style="position: absolute;">            
+                <canvas id="game-window" width="640" height="360"></canvas>
+            </div>
+
+        </div>
+        <div class="section">
+            <p>...and more to come.</p>
+        </div>
+    </div>
+    <script type="module" src="js/index.js"></script>
+</body>
+<script>
+    document.addEventListener('mousemove', (e) => {
+        const mouseGlow = document.querySelector('.mouse-glow');
+        mouseGlow.style.setProperty('--mouse-x', e.clientX + 'px');
+        mouseGlow.style.setProperty('--mouse-y', e.clientY + 'px');
+    });
+</script>
+</html>
