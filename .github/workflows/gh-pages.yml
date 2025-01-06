@@ -23,7 +23,7 @@ jobs:
         run: |
           wasm-pack build --target web --out-dir ./www/pkg
       - name: Remove .gitignore from pkg
-        run: rm pkg/.gitignore
+        run: rm ./www/pkg/.gitignore
       - name: Prepare for deployment
         run: |
           cd www
