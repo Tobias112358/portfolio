@@ -21,8 +21,7 @@ jobs:
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
       - name: Build
         run: |
-          wasm-pack build --target web
-          cp -r pkg www
+          wasm-pack build --target web --out-dir ./www/pkg
       - name: Remove .gitignore from pkg
         run: rm pkg/.gitignore
       - name: Prepare for deployment
@@ -37,5 +36,5 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./www
+          publish_dir: ./pkg
           force_orphan: true
